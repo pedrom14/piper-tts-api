@@ -1,0 +1,27 @@
+from flask import Flask, request, send_file
+import subprocess
+import uuid
+import os
+
+app = Flask(__name__)
+
+@app.route('/tts', methods=['POST'])
+def tts():
+    data = request.get_json()
+    text = data.get('text', '')
+    voice = data.get('voice', 'pt-br-voice.onnx')  # Nome do modelo de voz
+    output_filename = f"{uuid.uuid4()}.wav"
+    input_filename = f"{uuid.uuid4()}.txt"
+
+    with open(input_filename, 'w', encoding='utf-8') as f:
+        f.write(text)
+
+    subprocess.run([
+        'piper',
+        '--model', voice,
+        '--output_file', output_filename,
+        '--input_file', input_filename
+    ])
+
+    os.remove(input_filename)
+    return send_file(output_filename, mimetype='audio/wav')
